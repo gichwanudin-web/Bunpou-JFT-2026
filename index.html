@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bunpou JFT 2026 PG</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: rgba(255,255,255,0.95);
+            border-radius: 25px;
+            padding: 35px 30px;
+            max-width: 750px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .container::before {
+            content: '';
+            display: block;
+            height: 6px;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+            border-radius: 25px 25px 0 0;
+            margin: -35px -30px 20px -30px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .title { font-size: 16px; font-weight: 700; color: #1a1a2e; }
+        .title span { color: #e94560; }
+        .stats { display: flex; gap: 12px; font-size: 13px; font-weight: 600; color: #555; }
+        .stats div { background: #f0f0f0; padding: 3px 12px; border-radius: 20px; }
+        .stats .num { color: #e94560; font-size: 16px; }
+        .progress-bar { width: 100%; height: 6px; background: #e0e0e0; border-radius: 10px; margin-bottom: 15px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #e94560, #feca57); border-radius: 10px; transition: width 0.4s; width: 0%; }
+        .timer-container { text-align: center; margin-bottom: 12px; }
+        .timer {
+            display: inline-block;
+            font-size: 42px;
+            font-weight: 700;
+            color: #1a1a2e;
+            background: #f8f9fa;
+            padding: 4px 28px;
+            border-radius: 12px;
+            min-width: 90px;
+        }
+        .timer.warning { color: #e94560; animation: blink 0.8s infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        .question-number { font-size: 12px; color: #888; text-align: center; margin-bottom: 4px; }
+        .question-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            text-align: left;
+            margin-bottom: 20px;
+            padding: 20px 18px;
+            background: #f8f9fa;
+            border-radius: 16px;
+            min-height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 4px dashed #e94560;
+            white-space: pre-line;
+            line-height: 1.8;
+        }
+        .options { display: flex; flex-direction: column; gap: 10px; }
+        .option-btn {
+            background: #ecf0f1;
+            border: 2px solid #bdc3c7;
+            border-radius: 10px;
+            padding: 12px 18px;
+            font-size: 16px;
+            cursor: pointer;
+            text-align: left;
+            font-family: inherit;
+            transition: all 0.2s;
+            color: #2c3e50;
+        }
+        .option-btn:hover:not(:disabled) { background: #d5dbdb; border-color: #95a5a6; }
+        .option-btn:disabled { cursor: not-allowed; opacity: 0.85; }
+        
+        /* ===== STYLING SKOR AKHIR ===== */
+        .result-screen { display: none; text-align: center; padding: 15px 0; }
+        .score-circle {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e94560, #feca57);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 10px 40px rgba(233,69,96,0.3);
+            flex-direction: column;
+            color: white;
+        }
+        .score-circle .score-number { font-size: 52px; font-weight: 800; line-height: 1; }
+        .score-circle .score-label { font-size: 14px; opacity: 0.9; margin-top: 4px; }
+        
+        .result-stats {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .result-stat-box {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 12px 25px;
+            min-width: 100px;
+        }
+        .result-stat-box .stat-value { font-size: 28px; font-weight: 800; }
+        .result-stat-box .stat-label { font-size: 13px; color: #666; font-weight: 600; }
+        .stat-correct .stat-value { color: #27ae60; }
+        .stat-wrong .stat-value { color: #e74c3c; }
+        .stat-percent .stat-value { color: #3498db; }
+        
+        .result-message { font-size: 18px; font-weight: 700; margin-bottom: 20px; color: #2c3e50; }
+        
+        .answer-list {
+            margin-top: 20px;
+            text-align: left;
+            background: #f8f9fa;
+            padding: 15px 18px;
+            border-radius: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .answer-list .item {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+        .answer-list .item:last-child { border-bottom: none; }
+        .answer-list .item .soal { font-weight: 600; color: #2c3e50; margin-bottom: 6px; white-space: pre-line; }
+        .answer-list .item .jawab { font-weight: 600; }
+        .answer-list .item .jawab.correct { color: #27ae60; }
+        .answer-list .item .jawab.wrong { color: #e74c3c; }
+        .answer-list .item .jawab .user-answer { font-weight: 400; color: #e74c3c; font-size: 13px; display: block; margin-top: 3px; }
+        
+        .btn-restart {
+            margin-top: 15px;
+            padding: 12px 40px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(90deg, #e94560, #c0392b);
+            color: white;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-restart:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(233,69,96,0.35); }
+        
+        .start-screen { text-align: center; padding: 15px 0; }
+        .start-screen h1 { font-size: 24px; color: #1a1a2e; margin-bottom: 5px; }
+        .start-screen h1 span { color: #e94560; }
+        .start-screen p { color: #666; font-size: 15px; margin-bottom: 15px; }
+        .btn-start {
+            padding: 14px 50px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(90deg, #e94560, #c0392b);
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-start:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(233,69,96,0.35); }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Start Screen -->
+    <div class="start-screen" id="startScreen">
+        <h1>Bunpou <span>JFT 2026 PG</span></h1>
+        <p>📝 33 soal pilihan ganda (a, b, c, d)</p>
+        <p>⏱️ 25 detik per soal</p>
+        <p>🔀 Soal dan jawaban diacak</p>
+        <p>📊 Skor otomatis di akhir</p>
+        <button class="btn-start" onclick="startQuiz()">Mulai Kuis 🚀</button>
+    </div>
+
+    <!-- Quiz Screen -->
+    <div id="quizScreen" class="hidden">
+        <div class="header">
+            <div class="title">📚 Bunpou <span>JFT 2026 PG</span></div>
+            <div class="stats">
+                <div>📌 <span class="num" id="currentNum">1</span>/<span id="totalNum">33</span></div>
+                <div>✅ <span class="num" id="scoreDisplay">0</span></div>
+            </div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="timer-container"><div class="timer" id="timerDisplay">25</div></div>
+        <div class="question-number" id="qNumber">Soal 1 dari 33</div>
+        <div class="question-text" id="questionText"></div>
+        <div class="options" id="optionsContainer"></div>
+    </div>
+
+    <!-- Result Screen -->
+    <div class="result-screen" id="resultScreen">
+        <div class="score-circle">
+            <div class="score-number" id="finalScoreNum">0</div>
+            <div class="score-label">dari 33</div>
+        </div>
+        
+        <div class="result-stats">
+            <div class="result-stat-box stat-correct">
+                <div class="stat-value" id="statCorrect">0</div>
+                <div class="stat-label">Benar</div>
+            </div>
+            <div class="result-stat-box stat-wrong">
+                <div class="stat-value" id="statWrong">0</div>
+                <div class="stat-label">Salah</div>
+            </div>
+            <div class="result-stat-box stat-percent">
+                <div class="stat-value" id="statPercent">0%</div>
+                <div class="stat-label">Nilai</div>
+            </div>
+        </div>
+        
+        <div class="result-message" id="resultMessage"></div>
+        
+        <div class="answer-list" id="answerList"></div>
+        <button class="btn-restart" onclick="restartQuiz()">🔄 Ulangi Kuis</button>
+    </div>
+</div>
+
+<script>
+// ===== DATA SOAL (33 SOAL) =====
+const SOAL = [
+    { soal: "A：あした、学校で日本の音楽のイベントがありますよ。\nB：そうですか。おもしろそうですね。\nA：いっしょに（　　　）に行きませんか。\nB：いいですね。行きましょう。", options: ["見", "見て", "見に", "見る"], correct: 2 },
+    { soal: "A：休みの日に、よくスポーツをしますか。\nB：いいえ、あまり（　　　）。\nA：そうですか。じゃあ、休みの日は何をしますか。\nB：うちで映画を見たり、本を読んだりします。", options: ["しません", "します", "しましょう", "してません"], correct: 0 },
+    { soal: "A：日本語が上手になりましたね。\nB：ありがとうございます。\nA：日本語で手紙が書けますか。\nB：はい、毎日練習したので、日本語で手紙が（　　　　）なりました。", options: ["かけるように", "かけるそうに", "かけたように", "かけそうに"], correct: 0 },
+    { soal: "昨日のコンサートはどうでしたか。\n→ （　　　）楽しかったです。", options: ["にぎやかくて", "にぎやかで", "にぎやかな", "にぎやかと"], correct: 1 },
+    { soal: "美術館でこの写真が（　　　）。", options: ["かざってあります", "かざっいます", "あります", "かざります"], correct: 0 },
+    { soal: "【状況：バス停で、赤いバスがちょうど来たのを見ました。】\n赤いバスが（　　　）ばかりです。", options: ["来る", "来た", "来て", "来ます"], correct: 1 },
+    { soal: "チョコレートケーキとチーズケーキ（　　　）がいいですか。", options: ["どれ", "どの", "どちら", "どこ"], correct: 2 },
+    { soal: "A：昨日、何をしましたか。\nB：公園で散歩を（　　　）運動したりしました。", options: ["したり", "して", "する", "しない"], correct: 0 },
+    { soal: "チョコレートケーキとチーズケーキ、どちらがいいですか。\n→ チーズケーキ（　　　）いいです。", options: ["のほうが", "が", "のが", "で"], correct: 0 },
+    { soal: "A：どうして日本で働きたいですか。\nB：家族（　　　）働きたいからです。", options: ["のために", "のとき", "のほうが", "のが"], correct: 0 },
+    { soal: "A：もしもし、モモクさん。今、どこに（　　　）か。\nB：エスカレーターの下です。", options: ["います", "あります", "ありました", "いました"], correct: 0 },
+    { soal: "寒い（　　　）、エアコンを消します。", options: ["ですから", "のが", "でも", "けど"], correct: 0 },
+    { soal: "A：田中先生はどんな人ですか。\nB：田中先生はへん（　　　）、とてもやさしいです。", options: ["だけど", "だから", "ので", "なら"], correct: 0 },
+    { soal: "A：もう終わりましたか。\nB：いいえ、（　　　）。", options: ["まだ終わっていません", "まだ終わりました", "もう終わっていません", "まだ終わります"], correct: 0 },
+    { soal: "A：あ、（　　　）ハンカチですね。\nB：母がくれたんです。", options: ["きれいな", "きれい", "きれいの", "きれいで"], correct: 0 },
+    { soal: "A：この古いおてらはいつできたんですか。\nB：約100年前に、スギオノ様によって（　　　）。", options: ["建てられました", "建てました", "建てられます", "建てさせました"], correct: 0 },
+    { soal: "A：京都のおてらは、とてもきれいでしたよ。\nB：へえ、そうですか。じゃあ、今度の休みに（　　　）。", options: ["行ってみます", "行ってあります", "行っておきます", "行ってしまいます"], correct: 0 },
+    { soal: "A：来週のイベント、雨が（　　　）どうしますか。\nB：中止になります。", options: ["ふったら", "ふっても", "ふったり", "ふるので"], correct: 0 },
+    { soal: "A：今、レスティさんはどこですか。\nB：ゴミ箱の中に（　　　）。", options: ["います", "あります", "いました", "ありました"], correct: 1 },
+    { soal: "A：あ、ねこがかわいいですね。私の家にもたくさん（　　　）よ。\nB：いいですね。", options: ["います", "あります", "行きます", "見ます"], correct: 0 },
+    { soal: "ざっしを（　　　）。", options: ["読みます", "見ます", "飲みます", "着ます"], correct: 0 },
+    { soal: "これは友だちにもらった時計です。（　　　）です。", options: ["かっこよかった", "かっこよくて", "かっこいい", "かっこよく"], correct: 2 },
+    { soal: "すみません、この仕事、山田さんに手伝って（　　　）。", options: ["もらえませんか", "あげませんか", "くれませんか", "くださいませんか"], correct: 0 },
+    { soal: "このケーキは（　　　）ですね。\nB：おいしいですよ。", options: ["甘そう", "甘いそうな", "甘そうな", "甘くて"], correct: 0 },
+    { soal: "A：もしもし、今日はちょっと休みたいです。昨日から頭が（　　　）んです。", options: ["いたい", "いたくて", "いたいそう", "いたくない"], correct: 0 },
+    { soal: "先生：みなさん、ぶんぽうノートの一番を読んで（　　　）。\n学生：はい。", options: ["ください", "しまいました", "はいけません", "ければなりません"], correct: 0 },
+    { soal: "A：このコピー機を使って（　　　）。\nB：どうぞ。", options: ["もいいですか", "しまいました", "はいけません", "ければなりません"], correct: 0 },
+    { soal: "A：まるがめうどんはおいしいですか。\nB：はい、とてもおいしいですよ。週末は混んでいるので、（　　　）平日に行ったほうがいいですよ。", options: ["できれば", "そのあと", "そして", "それから"], correct: 0 },
+    { soal: "A：おきなわはどうでしたか。\nB：うみはきれいでした。（　　　）、暑かったです。", options: ["でも", "それで", "それに", "そして"], correct: 2 },
+    { soal: "A：趣味はなんですか。\nB：趣味はとりを（　　　）ことです。", options: ["吸う", "見る", "聞く", "読む"], correct: 1 },
+    { soal: "A：荷物が重そうですね。（　　　）。\nB：ありがとうございます。", options: ["持ちましょうか", "持ちませんか", "持ってもいいですか", "持ってください"], correct: 0 },
+    { soal: "すみません。この漢字の読み方を教えて（　　　）。", options: ["くださいませんか", "あげますか", "もいいですか", "はいけませんか"], correct: 0 },
+    { soal: "使いやすいそうじき（　　　）バイソンがおすすめです。", options: ["なら", "けど", "でも", "まで"], correct: 0 }
+];
+
+// ===== VARIABLES =====
+let questions = [];
+let currentIndex = 0;
+let timer = 25;
+let timerInterval = null;
+let isAnswered = false;
+let score = 0;
+let userAnswers = [];
+const TIME_PER_QUESTION = 25;
+const TOTAL = SOAL.length;
+
+// ===== DOM =====
+const startScreen = document.getElementById('startScreen');
+const quizScreen = document.getElementById('quizScreen');
+const resultScreen = document.getElementById('resultScreen');
+const questionText = document.getElementById('questionText');
+const optionsContainer = document.getElementById('optionsContainer');
+const timerDisplay = document.getElementById('timerDisplay');
+const currentNum = document.getElementById('currentNum');
+const totalNum = document.getElementById('totalNum');
+const progressFill = document.getElementById('progressFill');
+const qNumber = document.getElementById('qNumber');
+const scoreDisplay = document.getElementById('scoreDisplay');
+const answerList = document.getElementById('answerList');
+const finalScoreNum = document.getElementById('finalScoreNum');
+const statCorrect = document.getElementById('statCorrect');
+const statWrong = document.getElementById('statWrong');
+const statPercent = document.getElementById('statPercent');
+const resultMessage = document.getElementById('resultMessage');
+
+// ===== SHUFFLE =====
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+// ===== BUILD QUESTIONS =====
+function buildQuestions() {
+    return shuffle(SOAL).map(item => {
+        const correctText = item.options[item.correct];
+        const shuffledOptions = shuffle([...item.options]);
+        return {
+            soal: item.soal,
+            options: shuffledOptions,
+            correctText: correctText
+        };
+    });
+}
+
+// ===== START QUIZ =====
+function startQuiz() {
+    questions = buildQuestions();
+    currentIndex = 0;
+    score = 0;
+    userAnswers = [];
+    scoreDisplay.textContent = '0';
+    startScreen.classList.add('hidden');
+    quizScreen.classList.remove('hidden');
+    resultScreen.style.display = 'none';
+    loadQuestion();
+}
+
+// ===== LOAD QUESTION =====
+function loadQuestion() {
+    if (currentIndex >= questions.length) { endQuiz(); return; }
+
+    const q = questions[currentIndex];
+    
+    timer = TIME_PER_QUESTION;
+    timerDisplay.textContent = timer;
+    timerDisplay.classList.remove('warning');
+
+    questionText.textContent = q.soal;
+    
+    qNumber.textContent = `Soal ${currentIndex + 1} dari ${TOTAL}`;
+    currentNum.textContent = currentIndex + 1;
+    totalNum.textContent = TOTAL;
+    progressFill.style.width = ((currentIndex) / TOTAL * 100) + '%';
+
+    optionsContainer.innerHTML = '';
+    q.options.forEach((opt, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.textContent = `${String.fromCharCode(97 + index)}. ${opt}`;
+        btn.onclick = () => selectOption(opt, btn);
+        optionsContainer.appendChild(btn);
+    });
+
+    isAnswered = false;
+
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        timer--;
+        timerDisplay.textContent = timer;
+        if (timer <= 5) timerDisplay.classList.add('warning');
+        if (timer <= 0) {
+            clearInterval(timerInterval);
+            if (!isAnswered) {
+                isAnswered = true;
+                userAnswers.push({ 
+                    soal: q.soal, 
+                    correct: q.correctText, 
+                    userAnswer: null,
+                    isCorrect: false 
+                });
+                currentIndex++;
+                if (currentIndex >= questions.length) {
+                    endQuiz();
+                } else {
+                    loadQuestion();
+                }
+            }
+        }
+    }, 1000);
+}
+
+// ===== SELECT OPTION =====
+function selectOption(selected, btn) {
+    if (isAnswered) return;
+    isAnswered = true;
+    clearInterval(timerInterval);
+
+    const q = questions[currentIndex];
+    const allBtns = optionsContainer.querySelectorAll('.option-btn');
+    allBtns.forEach(b => b.disabled = true);
+
+    const isCorrect = (selected === q.correctText);
+    
+    userAnswers.push({
+        soal: q.soal,
+        correct: q.correctText,
+        userAnswer: selected,
+        isCorrect: isCorrect
+    });
+
+    if (isCorrect) {
+        score++;
+        scoreDisplay.textContent = score;
+        btn.style.background = '#2ecc71';
+        btn.style.borderColor = '#27ae60';
+        btn.style.color = 'white';
+    } else {
+        btn.style.background = '#e74c3c';
+        btn.style.borderColor = '#c0392b';
+        btn.style.color = 'white';
+        allBtns.forEach(b => {
+            if (b.textContent.includes(q.correctText)) {
+                b.style.background = '#2ecc71';
+                b.style.borderColor = '#27ae60';
+                b.style.color = 'white';
+            }
+        });
+    }
+
+    setTimeout(() => {
+        currentIndex++;
+        if (currentIndex >= questions.length) {
+            endQuiz();
+        } else {
+            loadQuestion();
+        }
+    }, 1500);
+}
+
+// ===== END QUIZ =====
+function endQuiz() {
+    clearInterval(timerInterval);
+    quizScreen.classList.add('hidden');
+    resultScreen.style.display = 'block';
+    
+    const totalBenar = userAnswers.filter(a => a.isCorrect).length;
+    const totalSalah = userAnswers.length - totalBenar;
+    const persentase = Math.round((totalBenar / TOTAL) * 100);
+    
+    finalScoreNum.textContent = totalBenar;
+    statCorrect.textContent = totalBenar;
+    statWrong.textContent = totalSalah;
+    statPercent.textContent = persentase + '%';
+    
+    if (persentase === 100) {
+        resultMessage.textContent = '🏆 Sempurna! Luar biasa!';
+        resultMessage.style.color = '#27ae60';
+    } else if (persentase >= 80) {
+        resultMessage.textContent = '🌟 Hebat! Teruskan!';
+        resultMessage.style.color = '#27ae60';
+    } else if (persentase >= 60) {
+        resultMessage.textContent = '👍 Cukup baik! Terus belajar!';
+        resultMessage.style.color = '#f39c12';
+    } else {
+        resultMessage.textContent = '📚 Jangan menyerah! Coba lagi!';
+        resultMessage.style.color = '#e74c3c';
+    }
+    
+    renderAnswerList();
+}
+
+// ===== RENDER ANSWER LIST =====
+function renderAnswerList() {
+    answerList.innerHTML = '';
+    const title = document.createElement('div');
+    title.style.cssText = 'font-weight:700;color:#e94560;padding:10px 0 6px 0;border-bottom:2px solid #e94560;margin-bottom:8px;font-size:15px;';
+    title.textContent = `📋 Detail Jawaban (${TOTAL} soal)`;
+    answerList.appendChild(title);
+
+    userAnswers.forEach((item, i) => {
+        const div = document.createElement('div');
+        div.className = 'item';
+        
+        let jawabanHtml = '';
+        if (item.isCorrect) {
+            jawabanHtml = `<div class="jawab correct">✅ Jawaban: ${item.correct} (Benar)</div>`;
+        } else if (item.userAnswer === null) {
+            jawabanHtml = `<div class="jawab wrong">⏰ Waktu habis (Tidak dijawab)</div>
+                          <div class="jawab correct" style="margin-top:3px;">✅ Kunci: ${item.correct}</div>`;
+        } else {
+            jawabanHtml = `<div class="jawab wrong">❌ Jawaban Anda: ${item.userAnswer} (Salah)
+                          <span class="user-answer">✅ Kunci: ${item.correct}</span></div>`;
+        }
+        
+        div.innerHTML = `<div class="soal">${i + 1}. ${item.soal}</div>${jawabanHtml}`;
+        answerList.appendChild(div);
+    });
+}
+
+// ===== RESTART =====
+function restartQuiz() {
+    resultScreen.style.display = 'none';
+    startScreen.classList.remove('hidden');
+    quizScreen.classList.add('hidden');
+    currentIndex = 0;
+    score = 0;
+    userAnswers = [];
+    clearInterval(timerInterval);
+}
+
+// Inisialisasi
+totalNum.textContent = TOTAL;
+</script>
+
+</body>
+</html>
